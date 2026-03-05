@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #FFC107;
+  --color-primary-dark: #e0a800;
+  --color-dark: #1a1a1a;
+  --color-surface: #ffffff;
+  --color-background: #f4f4f5;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-dark antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+.glass-card {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm;
+}
+
+.data-row-hover {
+  @apply transition-all duration-200 hover:bg-primary/5 cursor-default;
+}
