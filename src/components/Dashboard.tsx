@@ -1,20 +1,22 @@
 import React from 'react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  LineChart, Line, PieChart, Pie, Cell, Legend, AreaChart, Area
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  AreaChart, Area
 } from 'recharts';
-import { Wallet, TrendingUp, TrendingDown, Fuel, Calculator, Percent } from 'lucide-react';
-import { Transaction, FuelEntry, Vehicle } from '../types';
-import { formatCurrency } from '../lib/utils';
+import { Wallet, TrendingUp, TrendingDown, Fuel, Calculator, Percent, Wrench, Users, AlertCircle } from 'lucide-react';
+import { Transaction, FuelEntry, Vehicle, Maintenance } from '../types';
+import { formatCurrency, formatDate } from '../lib/utils';
 import { startOfMonth, endOfMonth, isWithinInterval, parseISO, subDays, format } from 'date-fns';
+import { motion } from 'motion/react';
 
 interface DashboardProps {
   transactions: Transaction[];
   fuelEntries: FuelEntry[];
   vehicles: Vehicle[];
+  maintenances: Maintenance[];
 }
 
-export default function Dashboard({ transactions, fuelEntries, vehicles }: DashboardProps) {
+export default function Dashboard({ transactions, fuelEntries, vehicles, maintenances }: DashboardProps) {
   const now = new Date();
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
@@ -70,8 +72,6 @@ export default function Dashboard({ transactions, fuelEntries, vehicles }: Dashb
       .reduce((acc, f) => acc + f.valor, 0)
   })).filter(v => v.valor > 0);
 
-  const COLORS = ['#FFC107', '#17a2b8', '#28a745', '#dc3545', '#6c757d', '#007bff'];
-
   const stats = [
     { label: 'Saldo Mensal', value: balance, icon: Wallet, color: balance >= 0 ? 'text-emerald-600' : 'text-rose-600', trend: '+12.5%' },
     { label: 'Entradas', value: income, icon: TrendingUp, color: 'text-emerald-600', trend: '+8.2%' },
@@ -82,33 +82,59 @@ export default function Dashboard({ transactions, fuelEntries, vehicles }: Dashb
   ];
 
   const topVehicle = [...fuelByVehicle].sort((a, b) => b.valor - a.valor)[0];
+  const pendingMaintenances = maintenances.filter(m => m.status === 'pendente');
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Premium Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-dark p-8 rounded-3xl text-white relative overflow-hidden shadow-2xl shadow-dark/20">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-8"
+    >
+      {/* Modern Header */}
+      <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-dark p-8 rounded-3xl text-white relative overflow-hidden shadow-2xl shadow-dark/20">
         <div className="relative z-10">
-          <h2 className="text-3xl font-bold tracking-tight mb-2">Bem-vindo à Versão Premium</h2>
-          <p className="text-white/60 font-medium">Sua gestão de frotas em um novo nível de precisão e controle.</p>
+          <h2 className="text-3xl font-bold tracking-tight mb-2">Painel de Gestão</h2>
+          <p className="text-white/60 font-medium">Controle total da sua frota e finanças em tempo real.</p>
         </div>
         <div className="flex items-center gap-4 relative z-10">
           <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10">
-            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">Status do Sistema</p>
+            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">Status da Frota</p>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-sm font-bold">100% Operacional</span>
+              <span className="text-sm font-bold">{vehicles.length} Veículos Ativos</span>
             </div>
           </div>
         </div>
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-32 -mt-32" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -ml-32 -mb-32" />
-      </div>
+      </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+          <motion.div 
+            key={i} 
+            variants={itemVariants}
+            whileHover={{ y: -5, scale: 1.02 }}
+            className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm hover:shadow-xl transition-all duration-300 group"
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="p-2 bg-zinc-50 rounded-lg group-hover:bg-primary/10 transition-colors">
                 <stat.icon className="w-5 h-5 text-zinc-400 group-hover:text-primary transition-colors" />
@@ -121,18 +147,18 @@ export default function Dashboard({ transactions, fuelEntries, vehicles }: Dashb
             <p className={`text-xl font-bold ${stat.color}`}>
               {typeof stat.value === 'number' ? formatCurrency(stat.value) : stat.value}
             </p>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Line Chart */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm">
+        <motion.div variants={itemVariants} className="lg:col-span-2 bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-lg font-bold text-zinc-800 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-primary" />
-              Análise de Fluxo de Caixa
+              Fluxo de Caixa (7 dias)
             </h3>
             <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest">
               <div className="flex items-center gap-2">
@@ -186,21 +212,52 @@ export default function Dashboard({ transactions, fuelEntries, vehicles }: Dashb
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
         {/* Side Info Panel */}
         <div className="space-y-6">
+          {/* Maintenance Alerts */}
+          <motion.div variants={itemVariants} className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h4 className="text-sm font-bold text-zinc-800 uppercase tracking-widest flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-primary" />
+                Manutenções
+              </h4>
+              <span className="bg-amber-50 text-amber-600 text-[10px] font-black px-2 py-0.5 rounded-full">
+                {pendingMaintenances.length} PENDENTES
+              </span>
+            </div>
+            <div className="space-y-3">
+              {pendingMaintenances.slice(0, 3).map(m => (
+                <div key={m.id} className="p-3 bg-zinc-50 rounded-2xl border border-zinc-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-zinc-800">{m.tipo}</p>
+                    <p className="text-[10px] text-zinc-500">{vehicles.find(v => v.id === m.veiculoId)?.nome}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold text-zinc-400">{formatDate(m.data)}</p>
+                  </div>
+                </div>
+              ))}
+              {pendingMaintenances.length === 0 && (
+                <div className="text-center py-4">
+                  <p className="text-xs text-zinc-400 italic">Nenhuma manutenção pendente</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+
           {/* Top Vehicle Card */}
-          <div className="bg-primary p-8 rounded-3xl shadow-xl shadow-primary/20 relative overflow-hidden group">
+          <motion.div variants={itemVariants} className="bg-primary p-6 rounded-3xl shadow-xl shadow-primary/20 relative overflow-hidden group">
             <div className="relative z-10">
               <h4 className="text-dark/60 text-xs font-bold uppercase tracking-widest mb-1">Maior Consumo (Mês)</h4>
               {topVehicle ? (
                 <>
-                  <p className="text-2xl font-black text-dark mb-4">{topVehicle.name}</p>
+                  <p className="text-xl font-black text-dark mb-4">{topVehicle.name}</p>
                   <div className="flex items-end justify-between">
-                    <p className="text-3xl font-black text-dark">{formatCurrency(topVehicle.valor)}</p>
+                    <p className="text-2xl font-black text-dark">{formatCurrency(topVehicle.valor)}</p>
                     <div className="p-3 bg-dark rounded-2xl">
-                      <Fuel className="w-6 h-6 text-primary" />
+                      <Fuel className="w-5 h-5 text-primary" />
                     </div>
                   </div>
                 </>
@@ -209,34 +266,37 @@ export default function Dashboard({ transactions, fuelEntries, vehicles }: Dashb
               )}
             </div>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
-          </div>
+          </motion.div>
 
           {/* Quick Insights */}
-          <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm">
-            <h4 className="text-sm font-bold text-zinc-800 mb-6 uppercase tracking-widest">Insights Premium</h4>
+          <motion.div variants={itemVariants} className="bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">
+            <h4 className="text-sm font-bold text-zinc-800 mb-4 uppercase tracking-widest flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-primary" />
+              Insights
+            </h4>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <div className="p-1.5 bg-emerald-50 rounded-lg">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  <TrendingUp className="w-3 h-3 text-emerald-600" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-zinc-800">Receita em Alta</p>
-                  <p className="text-[10px] text-zinc-500 font-medium">Suas entradas cresceram 8% em relação ao mês anterior.</p>
+                  <p className="text-[10px] text-zinc-500 font-medium">Suas entradas cresceram 8% este mês.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1.5 bg-amber-50 rounded-lg">
-                  <Fuel className="w-4 h-4 text-amber-600" />
+                  <Fuel className="w-3 h-3 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-zinc-800">Alerta de Combustível</p>
-                  <p className="text-[10px] text-zinc-500 font-medium">Os gastos com combustível representam 42% das suas saídas.</p>
+                  <p className="text-xs font-bold text-zinc-800">Alerta de Gastos</p>
+                  <p className="text-[10px] text-zinc-500 font-medium">Combustível representa 42% das saídas.</p>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

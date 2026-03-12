@@ -12,6 +12,13 @@ export function formatCurrency(value: number) {
   }).format(value);
 }
 
+export function formatNumber(value: number) {
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 export function formatDate(dateString: string) {
   if (!dateString) return '';
   const [year, month, day] = dateString.split('-');

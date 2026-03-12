@@ -18,35 +18,45 @@ import {
   TrendingDown,
   Calendar,
   Menu,
-  X
+  X,
+  Wrench,
+  Users
 } from 'lucide-react';
 import { subscribeToCollection, subscribeToVeiculos } from './services/firebase';
-import { Transaction, FuelEntry, Vehicle, TabType } from './types';
+import { Transaction, FuelEntry, Vehicle, TabType, Maintenance, Driver } from './types';
 import { cn, formatCurrency } from './lib/utils';
 
-// Components (to be implemented)
+// Components
 import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
 import FuelControl from './components/FuelControl';
 import Vehicles from './components/Vehicles';
 import Reports from './components/Reports';
+import MaintenanceControl from './components/Maintenance';
+import Drivers from './components/Drivers';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     const unsubTrans = subscribeToCollection('transacoes', (data) => setTransactions(data as Transaction[]));
     const unsubFuel = subscribeToCollection('combustivel', (data) => setFuelEntries(data as FuelEntry[]));
     const unsubVehicles = subscribeToVeiculos((data) => setVehicles(data as Vehicle[]));
+    const unsubMaint = subscribeToCollection('manutencoes', (data) => setMaintenances(data as Maintenance[]));
+    const unsubDrivers = subscribeToCollection('motoristas', (data) => setDrivers(data as Driver[]));
 
     return () => {
       unsubTrans();
       unsubFuel();
       unsubVehicles();
+      unsubMaint();
+      unsubDrivers();
     };
   }, []);
 
@@ -55,6 +65,8 @@ export default function App() {
     { id: 'transacoes', label: 'Transações', icon: ArrowLeftRight },
     { id: 'combustivel', label: 'Combustível', icon: Fuel },
     { id: 'veiculos', label: 'Veículos', icon: Truck },
+    { id: 'motoristas', label: 'Motoristas', icon: Users },
+    { id: 'manutencao', label: 'Manutenção', icon: Wrench },
     { id: 'relatorios', label: 'Relatórios', icon: FileText },
   ];
 
@@ -77,25 +89,26 @@ export default function App() {
               animate={{ opacity: 1 }}
               className="flex flex-col"
             >
-              <span className="font-bold text-lg leading-tight tracking-tight text-white">PZ TRANS</span>
-              <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-1.5 py-0.5 rounded-md w-fit">Premium Edition</span>
+              <span className="font-bold text-lg leading-tight tracking-tight text-white">PZ TRANSPORTES</span>
+              <span className="text-[10px] font-medium text-primary uppercase tracking-widest opacity-80">Gestão de Frota</span>
             </motion.div>
           )}
         </div>
 
-        <nav className="flex-1 py-6 px-3 space-y-2">
+        <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto custom-scrollbar">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabType)}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                "w-full flex items-center gap-3 py-3 rounded-xl transition-all duration-200 group",
+                isSidebarOpen ? "px-4" : "justify-center px-0",
                 activeTab === tab.id 
                   ? "bg-primary text-dark font-semibold shadow-lg shadow-primary/20" 
                   : "text-white/60 hover:bg-white/5 hover:text-white"
               )}
             >
-              <tab.icon className={cn("w-5 h-5", activeTab === tab.id ? "text-dark" : "group-hover:text-white")} />
+              <tab.icon className={cn("w-5 h-5 shrink-0", activeTab === tab.id ? "text-dark" : "group-hover:text-white")} />
               {isSidebarOpen && <span>{tab.label}</span>}
             </button>
           ))}
@@ -142,7 +155,8 @@ export default function App() {
                 <Dashboard 
                   transactions={transactions} 
                   fuelEntries={fuelEntries} 
-                  vehicles={vehicles} 
+                  vehicles={vehicles}
+                  maintenances={maintenances}
                 />
               )}
               {activeTab === 'transacoes' && (
@@ -152,7 +166,13 @@ export default function App() {
                 <FuelControl fuelEntries={fuelEntries} vehicles={vehicles} />
               )}
               {activeTab === 'veiculos' && (
-                <Vehicles vehicles={vehicles} />
+                <Vehicles vehicles={vehicles} drivers={drivers} />
+              )}
+              {activeTab === 'motoristas' && (
+                <Drivers drivers={drivers} />
+              )}
+              {activeTab === 'manutencao' && (
+                <MaintenanceControl maintenances={maintenances} vehicles={vehicles} />
               )}
               {activeTab === 'relatorios' && (
                 <Reports 
