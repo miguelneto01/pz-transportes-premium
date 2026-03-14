@@ -44,7 +44,7 @@ export const fetchReportData = async (collectionName: string, startDate: string,
     where("data", "<=", endDate)
   );
   const snapshot = await getDocs(q);
-  const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
   // Ordenar localmente para evitar necessidade de índices compostos no Firestore
   return data.sort((a: any, b: any) => b.data.localeCompare(a.data));
 };

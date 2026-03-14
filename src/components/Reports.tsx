@@ -29,15 +29,15 @@ export default function Reports({ transactions, fuelEntries, vehicles }: Reports
     try {
       let data: any[] = [];
       if (filters.tipo === 'combustivel') {
-        const fuelData = await fetchReportData('combustivel', filters.inicio, filters.fim);
+        const fuelData = await fetchReportData('combustivel', filters.inicio, filters.fim) as any[];
         data = fuelData.map(d => ({ ...d, tipo: 'combustivel' }));
       } else if (filters.tipo === 'todos') {
-        const transData = await fetchReportData('transacoes', filters.inicio, filters.fim);
-        const fuelData = await fetchReportData('combustivel', filters.inicio, filters.fim);
+        const transData = await fetchReportData('transacoes', filters.inicio, filters.fim) as any[];
+        const fuelData = await fetchReportData('combustivel', filters.inicio, filters.fim) as any[];
         const fuelMapped = fuelData.map(d => ({ ...d, tipo: 'combustivel' }));
         data = [...transData, ...fuelMapped].sort((a, b) => b.data.localeCompare(a.data));
       } else {
-        const transData = await fetchReportData('transacoes', filters.inicio, filters.fim);
+        const transData = await fetchReportData('transacoes', filters.inicio, filters.fim) as any[];
         data = transData.filter(t => t.tipo === filters.tipo);
       }
       setReportData(data);
